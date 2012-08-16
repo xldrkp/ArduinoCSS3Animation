@@ -26,8 +26,6 @@ IPAddress server(134,28,125,30);
 // that you want to connect to (port 80 is default for HTTP):
 EthernetClient client;
 
-int i;
-
 int sensorPin = A3;    // select the input pin for the potentiometer
 int sensorValue = 0;  // variable to store the value coming from the sensor
 
@@ -39,6 +37,8 @@ void setup() {
 
  // Open serial communications and wait for port to open:
   Serial.begin(9600);
+
+
 
   // start the Ethernet connection:
   if (Ethernet.begin(mac) == 0) {
@@ -53,39 +53,69 @@ void setup() {
   // give the Ethernet shield a second to initialize:
   delay(1000);
   Serial.println("connecting...");
-
-  // if you get a connection, report back via serial:
-  if (client.connect(server, 3000)) {
+  
+    // if you get a connection, report back via serial:
+  if (client.connect(server, 80)) {
     Serial.println("connected");
   } 
   else {
     // if you didn't get a connection to the server:
     Serial.println("connection failed");
-  }
+  } 
 }
 
 void loop() {
+  // if there's incoming data from the net connection.
+  // send it out the serial port.  This is for debugging
+  // purposes only:
+  if (client.available()) {
+    char c = client.read();
+    Serial.print(c);
+  }
 
-  // read the value from the sensor:
-  sensorValue = analogRead(sensorPin);
-  
+  // if there's no net connection, but there was one last time
+  // through the loop, then stop the client:
+  if (!client.connected() && lastConnected) {
+    Serial.println();
+    Serial.println("disconnecting.");
+    client.stop();
+  }
+
+  // if you're not connected, and ten seconds have passed since
+  // your last connection, then connect again and send data:
   if((millis() - lastConnectionTime > postingInterval)) {
     httpRequest();
-    i++;
   }
+  // store the state of the connection for next time through
+  // the loop:
+  lastConnected = client.connected();
 }
 
 // this method makes a HTTP connection to the server:
 void httpRequest() {
-
-    Serial.println("Sending request...");
-
-    client.print("GET /messung?p=");
+  
+  sensorValue = analogRead(sensorPin);
+  
+  // if there's a successful connection:
+  if (client.connect(server, 80)) {
+    Serial.println("connecting...");
+    // send the HTTP PUT request:
+    client.print("GET /index.php?p=");
     client.print(sensorValue);    
-    client.println(" HTTP/1.1");    
+    client.println(" HTTP/1.0");  
+    client.println("Connection: keep-alive");  
     client.println();
 
     // note the time that the connection was made:
     lastConnectionTime = millis();
-
+  } 
+  else {
+    // if you couldn't make a connection:
+    Serial.println("connection failed");
+    Serial.println("disconnecting.");
+    client.stop();
+  }
 }
+
+
+
