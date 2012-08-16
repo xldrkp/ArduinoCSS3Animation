@@ -32,9 +32,8 @@
 
         function grow() {
             $('#container').animate({
-//                boxShadow: '30px 30px 10px #666'
                 width: '800px'
-            }, 100);
+            }, 100, function() { shrink(); });
         };
 
         function shrink() {
@@ -58,9 +57,7 @@
                     grow();
                 }
 
-                if (b == 0) {
-                    shrink();
-                }
+
 
             })
 
