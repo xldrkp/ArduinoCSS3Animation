@@ -27,13 +27,18 @@ IPAddress server(134,28,125,30);
 EthernetClient client;
 
 int sensorPin = A3;    // select the input pin for the potentiometer
-int sensorValue = 0;  // variable to store the value coming from the sensor
+int inputPin = 2;
+int sensorValuePoti = 0;  // variable to store the value coming from the sensor
+int buttonValue = 0;
 
 unsigned long lastConnectionTime = 0;          // last time you connected to the server, in milliseconds
 boolean lastConnected = false;                 // state of the connection last time through the main loop
-const unsigned long postingInterval = 1*1000;  // delay between updates, in milliseconds
+//const unsigned long postingInterval = 1*1000;  // delay between updates, in milliseconds
+const unsigned long postingInterval = 100;  // delay between updates, in milliseconds
 
 void setup() {
+  
+  pinMode(inputPin, INPUT);
 
  // Open serial communications and wait for port to open:
   Serial.begin(9600);
@@ -94,14 +99,17 @@ void loop() {
 // this method makes a HTTP connection to the server:
 void httpRequest() {
   
-  sensorValue = analogRead(sensorPin);
+  sensorValuePoti = analogRead(sensorPin);
+  buttonValue = digitalRead(inputPin);
   
   // if there's a successful connection:
   if (client.connect(server, 80)) {
     Serial.println("connecting...");
     // send the HTTP PUT request:
-    client.print("GET /index.php?p=");
-    client.print(sensorValue);    
+    client.print("GET /api.php?p=");
+    client.print(sensorValuePoti);  
+    client.print("&b=");
+    client.print(buttonValue);      
     client.println(" HTTP/1.0");  
     client.println("Connection: keep-alive");  
     client.println();
